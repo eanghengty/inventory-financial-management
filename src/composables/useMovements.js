@@ -1,12 +1,17 @@
 import { ref } from 'vue'
 import { getDb } from './useDb'
 import { useProducts } from './useProducts'
+import { useTransactions } from './useTransactions'
+import { useAppSettings } from './useAppSettings'
+import { uid } from '../utils/formatters'
 
 const movements = ref([])
 let loaded = false
 
 export function useMovements() {
   const { products } = useProducts()
+  const { addTransaction } = useTransactions()
+  const { autoTransactionOnStockOut } = useAppSettings()
 
   async function load() {
     if (loaded) return
@@ -35,6 +40,19 @@ export function useMovements() {
     if (p) {
       const idx = products.value.findIndex(x => x.id === p.id)
       if (idx !== -1) products.value[idx] = { ...products.value[idx], qty: p.qty }
+    }
+
+    // auto-create income transaction for stock-out movements (if enabled)
+    if (data.type === 'out' && p && autoTransactionOnStockOut.value) {
+      const amount = data.qty * p.sell
+      await addTransaction({
+        id: uid(),
+        type: 'income',
+        desc: data.productName,
+        cat: 'Product Sales',
+        date: data.date,
+        amount
+      })
     }
   }
 

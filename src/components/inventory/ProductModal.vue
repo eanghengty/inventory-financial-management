@@ -3,6 +3,7 @@ import { reactive, watch, computed } from 'vue'
 import BaseModal from '../shared/BaseModal.vue'
 import { useProducts } from '../../composables/useProducts'
 import { useMovements } from '../../composables/useMovements'
+import { useCatalog } from '../../composables/useCatalog'
 import { uid, today } from '../../utils/formatters'
 
 const props = defineProps({ editProduct: { type: Object, default: null } })
@@ -10,6 +11,7 @@ const emit = defineEmits(['close'])
 
 const { products, addProduct, updateProduct, skuExists } = useProducts()
 const { addMovement } = useMovements()
+const { catalog } = useCatalog()
 
 const defaultForm = () => ({ sku: '', name: '', cat: '', qty: 0, reorder: 5, cost: 0, sell: 0, note: '' })
 const form = reactive(defaultForm())
@@ -18,7 +20,20 @@ const error = reactive({ sku: '', name: '', cat: '' })
 const isEdit = computed(() => !!props.editProduct)
 const title = computed(() => isEdit.value ? 'Edit Product' : 'Add Product')
 
-const categories = computed(() => [...new Set(products.value.map(p => p.cat).filter(Boolean))])
+const catalogNames = computed(() => catalog.value.map(c => c.name))
+const categories = computed(() => {
+  const fromProducts = products.value.map(p => p.cat).filter(Boolean)
+  const fromCatalog = catalog.value.map(c => c.cat).filter(Boolean)
+  return [...new Set([...fromProducts, ...fromCatalog])].sort()
+})
+
+function onNameChange() {
+  const match = catalog.value.find(c => c.name.toLowerCase() === form.name.trim().toLowerCase())
+  if (match) {
+    if (!form.cat) form.cat = match.cat
+    if (!form.sku && match.productNo) form.sku = match.productNo
+  }
+}
 
 watch(() => props.editProduct, (p) => {
   if (p) {
@@ -80,7 +95,11 @@ async function save() {
     </div>
     <div class="form-group">
       <label class="form-label">Product Name *</label>
-      <input class="inp" v-model="form.name" placeholder="e.g. Wireless Keyboard" />
+      <input class="inp" v-model="form.name" list="catalog-names-list" placeholder="e.g. Wireless Keyboard"
+        @change="onNameChange" @input="onNameChange" />
+      <datalist id="catalog-names-list">
+        <option v-for="n in catalogNames" :key="n" :value="n" />
+      </datalist>
       <div v-if="error.name" style="color:var(--danger);font-size:12px;margin-top:4px">{{ error.name }}</div>
     </div>
     <div class="form-group">

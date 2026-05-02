@@ -4,11 +4,16 @@ import { useBackup } from '../../composables/useBackup'
 import { useProducts } from '../../composables/useProducts'
 import { useMovements } from '../../composables/useMovements'
 import { useTransactions } from '../../composables/useTransactions'
+import { useAppSettings } from '../../composables/useAppSettings'
+import CatalogManager from './CatalogManager.vue'
+
+const emit = defineEmits(['switch-tab'])
 
 const { exportData, importData }   = useBackup()
 const { products }                 = useProducts()
 const { movements }                = useMovements()
 const { transactions }             = useTransactions()
+const { autoTransactionOnStockOut, toggleAutoTransaction } = useAppSettings()
 
 // Export
 const exporting = ref(false)
@@ -76,8 +81,41 @@ async function runImport(file) {
     <!-- Page header -->
     <div style="margin-bottom:28px">
       <div style="font-size:20px;font-weight:700">Admin</div>
-      <div style="font-size:13px;color:var(--muted)">Backup & restore your StockVault data</div>
+      <div style="font-size:13px;color:var(--muted)">Manage product catalog and backup your data</div>
     </div>
+
+    <!-- Product Catalog -->
+    <CatalogManager @navigate="emit('switch-tab', $event)" />
+
+    <div style="border-top:1px solid var(--border);margin-bottom:28px"></div>
+
+    <!-- Settings -->
+    <div style="margin-bottom:28px">
+      <div style="font-size:16px;font-weight:700;margin-bottom:16px">Settings</div>
+      <div class="card" style="padding:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">Auto-create Income on Stock Out</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5">
+              Automatically create income transaction when recording stock-out movements
+            </div>
+          </div>
+          <button
+            style="width:48px;height:28px;border-radius:14px;border:1px solid var(--border);cursor:pointer;transition:all .2s;flex-shrink:0;padding:2px;position:relative;background:var(--surface2);display:flex;align-items:center"
+            :style="autoTransactionOnStockOut ? { background: 'var(--accent)', borderColor: 'var(--accent)' } : {}"
+            @click="toggleAutoTransaction"
+          >
+            <div style="width:22px;height:22px;border-radius:50%;background:white;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.3);flex-shrink:0"
+              :style="autoTransactionOnStockOut ? { transform: 'translateX(20px)' } : {}"
+            ></div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin-bottom:28px"></div>
+
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px">Backup & Restore</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:860px">
 

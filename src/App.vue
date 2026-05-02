@@ -10,16 +10,20 @@ import { useTheme } from './composables/useTheme'
 import { useProducts } from './composables/useProducts'
 import { useMovements } from './composables/useMovements'
 import { useTransactions } from './composables/useTransactions'
+import { useCatalog } from './composables/useCatalog'
+import { useAppSettings } from './composables/useAppSettings'
 
 const activeTab = ref('dashboard')
 const { loadTheme } = useTheme()
 const { load: loadProducts } = useProducts()
 const { load: loadMovements } = useMovements()
 const { load: loadTransactions } = useTransactions()
+const { load: loadCatalog } = useCatalog()
+const { loadSettings } = useAppSettings()
 
 onMounted(async () => {
   await loadTheme()
-  await Promise.all([loadProducts(), loadMovements(), loadTransactions()])
+  await Promise.all([loadProducts(), loadMovements(), loadTransactions(), loadCatalog(), loadSettings()])
 })
 </script>
 
@@ -30,6 +34,6 @@ onMounted(async () => {
     <InventoryView v-show="activeTab === 'inventory'" />
     <MovementsView v-show="activeTab === 'movements'" />
     <FinanceView v-show="activeTab === 'finance'" />
-    <AdminView  v-show="activeTab === 'admin'" />
+    <AdminView  v-show="activeTab === 'admin'" @switch-tab="activeTab = $event" />
   </main>
 </template>
